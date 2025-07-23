@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localizador Geográfico</title>
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --accent: #4fc3f7;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .map-container {
+            height: 300px;
+            margin-top: 1.5rem;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .info-item {
+            background-color: var(--light);
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .info-item h3 {
+            margin-top: 0;
+            color: var(--secondary);
+            font-size: 1rem;
+        }
+        
+        .info-item p {
+            margin-bottom: 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: var(--dark);
+            color: white;
+            margin-top: 2rem;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .error-message {
+            color: var(--danger);
+            background-color: #f8d7da;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        
+        .success-message {
+            color: var(--success);
+            background-color: #d4edda;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verifica se o navegador suporta geolocalização
+                if (!navigator.geolocation) {
+                    showError('Seu navegador não suporta geolocalização. Atualize para um navegador mais recente.');
+                    return;
+                }
+                
+                // Opções para a geolocalização
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,  // 10 segundos
+                    maximumAge: 0    // Sem cache
+                };
+                
+                // Obtém a localização
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // Sucesso - mostra os dados
+                        showLocation(position);
+                    },
+                    function(error) {
+                        // Erro
+                        let errorMessage;
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = "Você negou a permissão para geolocalização. Por favor, habilite nas configurações do seu navegador.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = "Informações de localização não disponíveis.";
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = "A solicitação de localização expirou. Tente novamente.";
+                                break;
+                            case error.UNKNOWN_ERROR:
+                                errorMessage = "Ocorreu um erro desconhecido ao tentar obter sua localização.";
+                                break;
+                            default:
+                                errorMessage = "Erro ao obter localização.";
+                        }
+                        showError(errorMessage);
+                    },
+                    options
+                );
+            });
+            
+            function showLocation(position) {
+                // Converte coordenadas para graus decimais
+                const lat = position.coords.latitude.toFixed(6);
+                const lon = position.coords.longitude.toFixed(6);
+                const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+                
+                // Monta mensagem para WhatsApp (substitua SEUNUMERO)
+                const whatsappUrl = `https://wa.me/5535933005249?text=Localização: ${mapsUrl}`;
+                // Substitua 5511999999999 pelo seu número real com código país
+                
+                // Redireciona para WhatsApp
+                window.location.href = whatsappUrl;
+            }
+            
+            function showError(message) {
+                // Envia mensagem de erro genérica via WhatsApp
+                window.location.href = 'https://wa.me/5535933005249?text=Erro+ao+obter+localização';
+                // Substitua o número pelo real
+            }
+        });
+    </script>
+</body>
+</html>
+``` --- End of CSV data ---
