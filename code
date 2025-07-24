@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localizador Geográfico</title>
+    <style>
+        /* Estilos omitidos para brevidade */
+    </style>
+</head>
+<body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verifica se o navegador suporta geolocalização
+            if (!navigator.geolocation) {
+                showError('Seu navegador não suporta geolocalização. Atualize para um navegador mais recente.');
+                return;
+            }
+            
+            // Opções para a geolocalização
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,  // 10 segundos
+                maximumAge: 0    // Sem cache
+            };
+            
+            // Obtém a localização
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    // Sucesso - mostra os dados
+                    showLocation(position);
+                },
+                function(error) {
+                    // Erro
+                    let errorMessage;
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = "Você negou a permissão para geolocalização. Por favor, habilite nas configurações do seu navegador.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = "Informações de localização não disponíveis.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = "A solicitação de localização expirou. Tente novamente.";
+                            break;
+                        case error.UNKNOWN_ERROR:
+                            errorMessage = "Ocorreu um erro desconhecido ao tentar obter sua localização.";
+                            break;
+                        default:
+                            errorMessage = "Erro ao obter localização.";
+                    }
+                    showError(errorMessage);
+                },
+                options
+            );
+        });
+        
+        function showLocation(position) {
+            // Converte coordenadas para graus decimais
+            const lat = position.coords.latitude.toFixed(6);
+            const lon = position.coords.longitude.toFixed(6);
+            const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+            
+            // Abre o Google Maps em uma nova aba
+            window.open(mapsUrl, '_blank');
+            
+            // Monta mensagem para WhatsApp
+            const whatsappUrl = `https://wa.me/5535933005249?text=Localização: ${mapsUrl}`;
+            
+            // Redireciona para WhatsApp
+            window.location.href = whatsappUrl;
+        }
+        
+        function showError(message) {
+            // Envia mensagem de erro genérica via WhatsApp
+            const errorUrl = 'https://wa.me/5535933005249?text=Erro+ao+obter+localização';
+            window.location.href = errorUrl;
+        }
+    </script>
+</body>
+</html>
